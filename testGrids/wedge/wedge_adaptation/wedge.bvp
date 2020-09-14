@@ -1,0 +1,5 @@
+in		23	1040.0	0.0	100000.0	//u,v,p
+symm-head			15
+symm				15
+wedge				15
+out				26

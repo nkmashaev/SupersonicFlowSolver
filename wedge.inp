@@ -1,0 +1,12 @@
+0		//0 - initField 1 - savedField
+2.08		//CFL
+1		//0 - defaultTime; 1 - localTime1; 2 - localTime2;
+3000		//maxIter
+1000		//iterSaveStep
+1		//RK level
+0 		//0 - Standart RK Coeff; 1-Custom RK Coeff
+0.1 0.2 0.5 1.0 // Coeff for Custom RK (if custom)
+2		//mode: 1-AUSM, 2-HLL, 3-HLLC				
+1		//order: 1 - firstOrder, 2 - secondOrder
+1		//grad: 1 - GreenGauss, 2 - LeastSquare
+3		//limiters: 1 - VanAldaba, 2 - MinMod, 3 - VanLeer 
