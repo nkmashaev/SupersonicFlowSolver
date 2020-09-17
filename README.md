@@ -1,3 +1,4 @@
+# Пакет PSST
 
 ## Содержание
 
@@ -18,6 +19,10 @@
 7. [Реконструктор и ограничители](#Реконструктор-и-ограничители)
 8. [Вычисление шага по псевдовремени](#Вычисление-шага-по-псевдовремени)
 9. [Вычисление конвективных потоков](#Вычисление-конвективных-потоков)
+10. [Запуск расчета в пакете PSST](#Запуск-расчета-в-пакете-PSST)
+    1. [Двумерный расчет](#Двумерный-расчет)
+    2. [Трехмерный расчет](#Трехмерный-расчет)
+11. [Список литературы](#Cписок-литературы)
 
 ## Введение
 
@@ -266,3 +271,124 @@ order - порядок схемы. При выборе второго поряд
 ## Вычисление конвективных потоков
 
 Вычисление конвективных потоков в программе *PSST* осуществляется классами *psstConvectiveAUSM*, *psstConvectiveHLL*, *psstConvectiveHLLC*, отражающие схемы AUSM, HLL, HLLC соответственно. Данные классы являются наследниками чисто виртуального класса *psstInterfaceConvectiveFlow*. Для вычисления конвективных потоков и невязок используются метод *calculate()* в ходе которого происходит цикл по граням (за исключением родительских), где вычисляет прибавка к невязкам соседних к грани объемов. Стоит отметить, что в случае граничной грани, конвективные потоки и значения невязок вычисляются по значению в граничном объеме. В остальных случаях потоки и прибавка к невязкам вычисляется при помощи реконструированных значений на грани по соответствующей схеме.
+
+## Запуск расчета в пакете PSST
+
+Запуск расчета в пакете PSST будем производить на примере задачи сжатия сверхзвукового течения в канале с центральным клином. Рассмотрим невязкое сверхзвуковое течение в канале с центральным клином, тангенс угла которого равен 1/3. На вход подается сверхзвуковой поток с числом Маха равным 3.0, на выходе поток является сверхзвуковым.
+
+### Пример двумерного расчета
+
+Для решения двумерной задачи будем использовать сетку wedge40_120.cas размером 40x120, приведенную на рисунке ниже.
+
+![Caption](./images/Grid40x120.png "Двумерная сетка")
+
+Перед запуском программы первым делом необходимо настроить файл "problem_manager". Для редактирования данного файла достаточно наличия любого текстового редактора. Здесь в первой строке указывается имя расчетной сетки, используемой для расчетов, а во второй - имя файлов \*.inp, \*.bvp, \*.btq, \*.par, \*.sav. Также создается файл с сеткой с именем \*.msh (необходим для проверки того, что программа корректно считала сетку).
+
+![Caption](./images/problem_manager2D.png "Настройка файла problem_manager")
+
+Далее зададим постоянные свойства среды: молярную массу и удельную теплоемкость при постоянном давлении. Для этого необходимо отредактировать файл "wedge.prop" в любом текстовом редакторе. В первой строке вводим значение молярной массы в кг/Моль, а во второй - удельную теплоемкость при постоянном давлении в Дж/(кг \* К). Будем использовать в качестве среды воздух, таким образом M = 0.029 кг/Моль, cp = 1005 Дж/(кг \* К).
+
+![Caption](./images/prop.png "Настройка файла *.prop")
+
+Настроим граничные условия. Для этого в любом текстовом редакторе отредактируем файлы "wedge.bvp" и "wedge.btg". В сетке wedge40_120.cas созданы следующие граничные зоны: in, out, wall, wedge, symm, up.
+
+![Caption](./images/BoundaryNames.png "Наименование зон")
+
+in - сверхзвуковой вход. Для постановки условия сверхзвукового входа необходимо поставить индекс граничного условия 23 и задать две компоненты скорости (значение скорость 1040 м/c примерно соответствует значению числа Маха 3), а также давление (100000 Па, что примерно равно атмосферному). На границе out ставим условие сверхзвукового выхода, индекс которого 26. Другие зоны wall, symm, wedge, up - это стенки. Индекс граничного условия стенки с проскальзыванием 15. Таким образом, мы задали динамические граничные условия, за которые отвечает файл "wedge.bvp"
+
+![Caption](./images/bvp2D.png "Динамические граничные условия")
+
+Настройка тепловых граничных условий происходит в файле "wedge.btq". Здесь на входе in ставим условие теплового входа с индексом 27. На стенках wall, symm, wedge, up ставим условия адиабатической стенки. На выходе out ставим условие теплового выхода. 
+
+![Caption](./images/btq2D.png "Тепловые граничные условия")
+
+Теперь зададим параметры солвера. Будем решать задачу с первым порядком точности без использования вычисления локального шага по времени. Значение шага по времени определяется значением числа Куранта, которое мы зададим равным 0.5. Используем один шаг по схеме Рунге-Кутты(таким образом, многошаговая схема Рунге-Кутты в данном случае не используется). Поставленной задаче соответствует файл "wedge.inp", содержимое которого приведено на рисунке ниже:
+
+![Caption](./images/inp2D.png "Настройка wedge.inp")
+
+Как видно по первой строке из данного рисунка, мы начинаем новое решение, а не стартуем с предыдущего, а значит для расчетов обязательно необходимо наличие файла "wedge.par" (в противном случае, от предыдущего решения должен быть доступен файл "wedge.sav"). В файле "wedge.par" необходимо проинициализировать начальные значения компонент скорости, давления, температуры. Пример содержимого файла "wedge.par" приведен на рисунке ниже:
+
+![Caption](./images/par2D.png "Настройка wedge.par")
+
+Настроив указанные выше файлы и предварительно скомпилировав программу, можно запускать расчет. В случае успеха на экране выведется краткая информация о считанной сетке, настройках солвера. Затем последует вывод итерационного процесса, где первый столбик - текущая итерация, второй столбик - затраченное на текущий момент время на решение задачи, а остальные - невязки.
+
+![Caption](./images/PSST_2D.png "Работа программы")
+
+В процессе работы программы будут созданы файлы "wedge.sav", "wedge.dat" и "wedge_residual.dat". В файл "wedge.dat" выгружается решение в формате, используемом ANSYS Fluent. Таким образом, решение можно визуализировать при помощи файлов "wedge40_120.cas" и "wedge.dat", к примеру, в программе Tecplot. В файл "wedge.sav" также выгружается решение, но в формате более удобным для считывания программой. В файл "wedge_residual.dat" выгружаются невязки. В исходной папке имеются tecplot файлы ResidualIteration.lay, ResidualTime.lay, которые по информации из файла "wedge_residual.dat" строят зависимость невязок от итерации и от времени решения соответсвенно.
+
+Ниже приведено полученное в результате расчета задачи поле давления
+![Caption](./images/Pressure2D.png "Поле давления")
+
+### Пример трехмерного расчета
+
+## Список литературы
+
+[1] Смирнов Е.М., Зайцев Д.К. "Метод конечных объемов в приложении к зада-
+чам гидрогазодинамики и теплообмена в областях сложной геометрии Научно-
+технические ведомости. СПбГПУ, 2004. №2. С. 70-81.
+
+[2] J.Blazek "Computational Fluid Dynamics: Principles and Applications First edition
+2001, pp. 29-324.
+
+[3] Liou M.S., Steffen C.J., "A new flux splitting scheme Journal of Computational
+Physics. 107 (1) (1993) 23–39.
+
+[4] Harten A., Lax P.D., van Leer B., "On upstream differencing and Godunov-type
+schemes for hyperbolic conservation laws SIAM Review. 25 (1) (1983) 35–61.
+
+[5] Toro E.F., "Riemann solvers and numerical methods for fluid dynamics Springer-
+Verlag, Berlin, Heidelberg (2009).
+
+[6] Mavriplis D. J.”Revisiting the Least-squares Procedure for Gradient Reconstruction
+on Unstructured Meshes”, NASA/CR-2003-212683 NIA Report No. 2003-06, pp. 2-
+20.
+
+[7] Alpesh Patel, “Development of an adaptive RANS solver for unstructured
+hexahedral meshes”, PhD thesis, Universit´e Libre de Bruxelles, 2003, pp. 90-101.
+
+[8] Batrh T. J. , Jespersen D. “The Design and Application of Upwind Schemes on
+Unstructured Meshes”, AIAA Paper 89-0366, Jan.1989.
+
+[9] Darwish M., Moukalled F. "TVD schemes for unstructured grids Int. J. Heat Mass
+Transfer – 2003. – Vol.46. – P. 599–611
+
+[10] Harten A. "High resolution schemes for hyperbolic conservation laws J. Comput.
+Phys. – 1983. – Vol.49, No. 3. – P. 357-393.
+
+[11] Jameson, A.; Schmidt, W.; Turkel, E.: "Numerical Solutions of the Euler Equations
+by Finite Volume Methods Using Runge-Kutte Time-Stepping Schemes". AIAA
+Paper 81-1259, 1981.
+
+[12] E. V. Kolesnik, E. M. Smirnov "Some aspects of numerical modeling of inviscid
+supersonic flow in a duct with a central wedge Journal of Physics: Conf. Series 1038.
+– 2018
+
+[13] Jinlan Gou, Xin Yuan and Xinrong Su "Adaptive mesh refinement method based
+investigation of the interaction between shock wave, boundary layer, and tip vortex
+in a transonic compressor"Proc IMechE Part G: J Aerospace Engineering 0(0) 1–22
+IMechE 2017 pp. 3-8
+
+[14] "ANSYS Fluent Guide. Appendix B Mesh Format"ANSYS, Inc. April 15, 2008
+
+[15] A.A.Смирновский, Е.М.Смирнов "Высокопроизводительные вычисления с ис-
+пользованием пакета OpenFOAM Санкт-Петербург 2018
+
+[16] HUAZHONG TANG AND TAO TANG "ADAPTIVE MESH METHODS FOR
+ONE- AND TWO-DIMENSIONAL HYPERBOLIC CONSERVATION LAWS"//
+SIAM J. NUMER. ANAL. 2003 Society for Industrial and Applied Mathematics
+
+[17] Jinlan Gou, Xin Yuan and Xinrong Su "Adaptive mesh refinement method based
+investigation of the interaction between shock wave, boundary layer, and tip vortex
+in a transonic compressor"// Proc IMechE Part G: J Aerospace Engineering 0(0)
+1–22 2017
+
+
+[18] А. Швец "Погружение в паттерны проектирования"//v2018-1.5, стр 100-118
+
+[19] "ANSYS Fluent Theory Guide. Chapter 21: Adapting the Mesh"ANSYS Inc 2013,
+pp. 687-712.
+
+[20] J. F. Daunenhofer and J. R. Baron. "Grid Adaption for the 2D Euler
+Equations". Technical Report
+
+
