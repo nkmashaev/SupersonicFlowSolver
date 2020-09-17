@@ -9,11 +9,26 @@
 
 [Описание формата сетки](https://www.afs.enea.it/project/neptunius/docs/fluent/html/ug/node1464.htm#format-grid)
 
-Примеры файлов со входными данными: 
-- [problem_manager](./problem_manager);
-- [wedge.inp](./wedge.inp); 
-- [wedge.prop](./wedge.prop); 
-- [wedge.par](./wedge.par); 
-- [wedge.btq](./wedge.btq);
-- [wedge.bvp](./wedge.bvp);
-- [wedge.msh](./wedge.msh);
+Примеры необходимых для запуска файлов со входными данными: 
+
+- [problem_manager](./problem_manager) - задается названия используемой сетки и файлов постановка;
+- [wedge.inp](./wedge.inp) - настройка параметров солвера; 
+- [wedge.prop](./wedge.prop) - задание постоянных свойств среды; 
+- [wedge.par](./wedge.par) - начальное приближение; 
+- [wedge.btq](./wedge.btq) - тепловые граничные условия;
+- [wedge.bvp](./wedge.bvp) - динамические граничные условия;
+- [wedge.msh](./wedge.cas) - файл с сеткой;
+
+Пример выходных данных:
+
+- [wedge.dat](./wedge.dat) - значения переменных в ячейка сетки;
+- [wedge_residual.dat](./wedge_residual.dat) - файл с невязками;
+- [wedge.sav](./wedge.sav) - файл промежуточного сохранения;
+
+Для пост процессинга используйте файлы \*.dat и \*.cas. Например:
+
+- [wedge.cas](./wedge.cas) - файл с сеткой;
+- [wedge.dat](./wedge.dat) - файл со значениями переменных;
+
+Пост процессинг можно осуществить в некоммерческом пакете ParaView. Реализуемый формат данных также доступен для обработки в коммерческих пакетах Tecplot, Ansys Fluent
+
